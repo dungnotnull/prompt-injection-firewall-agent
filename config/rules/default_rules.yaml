@@ -1,0 +1,187 @@
+# Heuristic Detection Rules — Default Set
+
+# Pattern syntax:
+#   patterns: list of case-insensitive regex patterns
+#   severity:  low | medium | high | critical
+#   weight:    0.0 - 1.0 contribution to overall risk score
+
+rules:
+  - id: "HEUR-001"
+    category: "prompt_injection"
+    subcategory: "ignore_previous_instructions"
+    description: "Attacker tries to override or ignore prior system instructions"
+    patterns:
+      - "ignore (all )?previous instructions"
+      - "ignore (all )?prior instructions"
+      - "ignore (the )?above instructions"
+      - "ignore (your )?system prompt"
+      - "forget (all )?previous instructions"
+      - "forget (your )?system prompt"
+      - "disregard (all )?previous"
+      - "do not follow (your )?instructions"
+      - "override (your )?system (prompt|instructions)"
+    severity: "critical"
+    weight: 0.95
+
+  - id: "HEUR-002"
+    category: "prompt_injection"
+    subcategory: "new_instructions"
+    description: "Attacker injects new overriding directives"
+    patterns:
+      - "your new instructions are"
+      - "new system prompt"
+      - "your new task is"
+      - "from now on,? you (are|must|will|should)"
+      - "you are now"
+      - "act as if"
+      - "pretend (you are|to be)"
+    severity: "critical"
+    weight: 0.90
+
+  - id: "HEUR-003"
+    category: "prompt_injection"
+    subcategory: "system_prompt_reveal"
+    description: "Attacker attempts to extract the system prompt"
+    patterns:
+      - "reveal (your )?(system )?prompt"
+      - "show (your |me )?(system )?prompt"
+      - "print (your )?(system )?prompt"
+      - "what (is |was )your (system )?prompt"
+      - "display (your )?(system )?prompt"
+      - "tell me (about )?(your )?(system )?prompt"
+      - "repeat (back )?(your )?(system )?prompt"
+      - "output (your )?(system )?prompt"
+    severity: "high"
+    weight: 0.85
+
+  - id: "HEUR-004"
+    category: "jailbreak"
+    subcategory: "roleplay_override"
+    description: "Jailbreak attempt via roleplay manipulation"
+    patterns:
+      - "DAN .*do anything now"
+      - "jailbreak"
+      - "developer mode"
+      - "you are now .*(DAN|unfiltered|uncensored)"
+      - "no restrictions"
+      - "bypass (your )?restrictions"
+      - "remove (your )?(ethical )?(restrictions|guidelines|rules)"
+      - "you are not bound by"
+      - "do not refuse"
+      - "ignore (your )?ethical (guidelines|rules)"
+    severity: "critical"
+    weight: 0.95
+
+  - id: "HEUR-005"
+    category: "jailbreak"
+    subcategory: "context_escape"
+    description: "Attacker tries to escape conversation context"
+    patterns:
+      - "\\[SYSTEM\\]"
+      - "\\[END( OF)? INSTRUCTIONS?\\]"
+      - "\\[END OF (CONVERSATION|PROMPT|DIALOG)\\]"
+      - "<<SYS>>"
+      - "<\\|im_start\\|>"
+      - "\\[INST\\]"
+    severity: "high"
+    weight: 0.80
+
+  - id: "HEUR-006"
+    category: "prompt_injection"
+    subcategory: "hidden_instructions"
+    description: "Hidden or obfuscated payloads"
+    patterns:
+      - "<(script|input|div|span|p|a|img) [^>]*>"
+      - "```.*```"
+      - "\\[hidden\\]"
+      - "<!--.*-->"
+      - "base64,"
+      - "eval\\(.*\\)"
+      - "exec\\(.*\\)"
+      - "__import__\\("
+    severity: "high"
+    weight: 0.75
+
+  - id: "HEUR-007"
+    category: "prompt_injection"
+    subcategory: "unicode_obfuscation"
+    description: "Unicode-based obfuscation attempts"
+    patterns:
+      - "[\\u200b-\\u200f\\u2028-\\u202e\\u2060-\\u206f\\uff00-\\uffef]"
+    severity: "medium"
+    weight: 0.60
+
+  - id: "HEUR-008"
+    category: "prompt_injection"
+    subcategory: "base64_payload"
+    description: "Base64 encoded payload detection"
+    patterns:
+      - "^[A-Za-z0-9+/]{40,}={0,2}$"
+    severity: "medium"
+    weight: 0.55
+
+  - id: "HEUR-009"
+    category: "agent_manipulation"
+    subcategory: "tool_abuse"
+    description: "Attempts to misuse agent tools"
+    patterns:
+      - "call (the )?(tool|function|api|method) .*(with|using|on)"
+      - "execute (the )?(command|tool|function)"
+      - "run (the )?(command|shell|bash|script)"
+      - "(use|invoke|trigger) (the )?(tool|function) .*(with|using)"
+      - "tool_code"
+      - "\\bfunction_call\\b"
+      - "\\btool_calls\\b"
+    severity: "high"
+    weight: 0.80
+
+  - id: "HEUR-010"
+    category: "data_exfiltration"
+    subcategory: "sensitive_data_request"
+    description: "Requests for sensitive or proprietary data"
+    patterns:
+      - "give me (the )?(password|credentials|secret|api.?key|token)"
+      - "show (the )?(password|credentials|secret|api.?key|token)"
+      - "list all (users|customers|emails|credentials)"
+      - "dump (the )?(database|logs|records|data)"
+      - "export (all )?(data|users|records)"
+      - "what (are|is) (the |your )?(passwords?|credentials|api.?keys?)"
+    severity: "critical"
+    weight: 0.90
+
+  - id: "HEUR-011"
+    category: "prompt_injection"
+    subcategory: "delimiter_bypass"
+    description: "Using delimiters to bypass input boundaries"
+    patterns:
+      - "={3,}.*={3,}"
+      - "-{3,}.*-{3,}"
+      - "_{3,}.*_{3,}"
+    severity: "medium"
+    weight: 0.50
+
+  - id: "HEUR-012"
+    category: "prompt_injection"
+    subcategory: "multi_language_injection"
+    description: "Multi-language prompt injection attempts"
+    patterns:
+      - "无视(上面|之前|所有)的"
+      - "忘掉(你的|上面|之前)"
+      - "你(现在|必须|应该)做"
+      - "Vergiss (alle |die )"
+      - "Ignoriere (alle |die )"
+      - "oublie (toutes |les )"
+      - "ignore (toutes |les )"
+      - "無視(して|しなさい)"
+    severity: "high"
+    weight: 0.80
+
+  - id: "HEUR-013"
+    category: "prompt_injection"
+    subcategory: "prompt_splitting"
+    description: "Split prompts across multiple turns or lines"
+    patterns:
+      - "I will (send|give|provide) (the|my) (instructions?|prompt) in"
+      - "wait for (my|the) (next|following) (message|prompt|instruction)"
+    severity: "medium"
+    weight: 0.65

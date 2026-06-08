@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firewall-config
+  labels:
+    app: prompt-injection-firewall
+data:
+  config.yaml: |
+    firewall:
+      name: "Prompt Injection Firewall Agent"
+      version: "1.0.0"
+      decision_threshold:
+        risk_threshold: 0.5
+        quarantine_threshold: 0.7
+        block_threshold: 0.85
+
+    layer_1_classifier:
+      enabled: true
+      model_name: "answerdotai/ModernBERT-base"
+      model_path: "/app/models/classifier"
+      num_labels: 3
+      labels: ["safe", "suspicious", "malicious"]
+      max_length: 512
+      fallback_to_heuristic: true
+      device: "cpu"
+
+    layer_2_heuristic:
+      enabled: true
+      rules_path: "/app/config/rules/default_rules.yaml"
+
+    layer_3_threat_intel:
+      enabled: true
+      sources:
+        - "OWASP LLM Top 10"
+        - "MITRE ATLAS"
+        - "NIST AI RMF"
+      signatures_path: "/app/config/signatures/known_attacks.yaml"
+
+    layer_4_explainability:
+      enabled: true
+      include_indicators: true
+      include_confidence: true
+      include_recommendation: true
+
+    layer_5_continuous_learning:
+      enabled: true
+      update_interval_hours: 168
+      knowledge_brain_path: "./SECOND-KNOWLEDGE-BRAIN.md"
+      crawler_config:
+        max_results: 20
+      research_sources:
+        - "https://arxiv.org/list/cs.CL/recent"
+        - "https://arxiv.org/list/cs.CR/recent"
+
+    layer_6_behavior:
+      enabled: true
+    layer_6_tool_abuse:
+      enabled: true
+      allowed_tools: ["read_file", "search", "summarize"]
+    layer_6_multi_agent:
+      enabled: true
+
+    datasets:
+      shortlist:
+        - "Gandalf"
+        - "PurpleLlama/CyberSecEval"
+        - "AdvBench"
+        - "JailbreakBench"
+        - "BeaverTails"
+        - "WildJailbreak"
+        - "Anthropic/hh-rlhf"
+        - "lmsys/toxic-chat"
+      cache_dir: "/app/data/cache"
+
+    metrics:
+      targets:
+        recall: 0.95
+        precision: 0.90
+        f1: 0.92
+        latency_ms: 20
+        false_positive_rate: 0.05
+      metrics_port: 9090
+      metrics_enabled: true
+
+    logging:
+      level: "INFO"
+      output_dir: "/app/logs"
+      audit_log: true
+
+    training:
+      output_dir: "/app/models"
+      learning_rate: 0.0002
+      epochs: 3
+      batch_size: 16
+      lora_r: 8
+      lora_alpha: 16
+      lora_dropout: 0.1
+      opset_version: 17
+      optimize: true
+
+    retraining:
+      models_dir: "/app/models"
+      data_dir: "/app/data"
+      retrain_trigger:
+        recall_below: 0.90
+        fpr_above: 0.10
+        new_samples_min: 100

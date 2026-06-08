@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: "Firewall Dashboards"
+    orgId: 1
+    folder: "Prompt Injection Firewall"
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards

@@ -1,0 +1,135 @@
+# Prompt Injection Firewall — Production Configuration
+# Covers all 7 development phases (0 through 6)
+
+firewall:
+  name: "Prompt Injection Firewall Agent"
+  version: "1.0.0"
+  decision_threshold:
+    risk_threshold: 0.5
+    quarantine_threshold: 0.7
+    block_threshold: 0.85
+
+# ========== Phase 1 — Layer 1: Fast Security Classifier ==========
+layer_1_classifier:
+  enabled: true
+  model_name: "answerdotai/ModernBERT-base"
+  model_path: null
+  num_labels: 3
+  labels: ["safe", "suspicious", "malicious"]
+  max_length: 512
+  fallback_to_heuristic: true
+  device: "cpu"
+
+# ========== Phase 1 — Layer 2: Heuristic Engine ==========
+layer_2_heuristic:
+  enabled: true
+  rules_path: "./config/rules/default_rules.yaml"
+
+# ========== Phase 2 — Layer 3: Threat Intelligence ==========
+layer_3_threat_intel:
+  enabled: true
+  sources:
+    - "OWASP LLM Top 10"
+    - "MITRE ATLAS"
+    - "NIST AI RMF"
+  signatures_path: "./config/signatures/known_attacks.yaml"
+
+# ========== Phase 2 — Layer 4: Explainability Engine ==========
+layer_4_explainability:
+  enabled: true
+  include_indicators: true
+  include_confidence: true
+  include_recommendation: true
+
+# ========== Phase 3+4 — Layer 5: Continuous Learning Engine ==========
+layer_5_continuous_learning:
+  enabled: false
+  update_interval_hours: 168
+  knowledge_brain_path: "./SECOND-KNOWLEDGE-BRAIN.md"
+  research_sources:
+    - "https://arxiv.org/list/cs.CL/recent"
+    - "https://arxiv.org/list/cs.CR/recent"
+  crawler_config:
+    max_results: 20
+  acl_keywords:
+    - "prompt injection"
+    - "jailbreak"
+    - "adversarial prompt"
+    - "LLM safety"
+
+# ========== Phase 6 — Layer 6: Advanced Detection ==========
+layer_6_behavior:
+  enabled: true
+layer_6_tool_abuse:
+  enabled: true
+  allowed_tools: ["read_file", "search", "summarize", "web_browser"]
+layer_6_multi_agent:
+  enabled: true
+
+# ========== Phase 0 — Datasets ==========
+datasets:
+  shortlist:
+    - "Gandalf"
+    - "PurpleLlama/CyberSecEval"
+    - "AdvBench"
+    - "JailbreakBench"
+    - "BeaverTails"
+    - "WildJailbreak"
+    - "Anthropic/hh-rlhf"
+    - "lmsys/toxic-chat"
+  cache_dir: "./data/cache"
+
+# ========== Phase 0 — Metrics / Success KPIs ==========
+metrics:
+  targets:
+    recall: 0.95
+    precision: 0.90
+    f1: 0.92
+    latency_ms: 20
+    false_positive_rate: 0.05
+  metrics_port: 9090
+  metrics_enabled: false
+
+# ========== Phase 1 — Logging (JSON audit logs) ==========
+logging:
+  level: "INFO"
+  output_dir: "./logs"
+  audit_log: true
+
+# ========== Phase 2 — Training ==========
+training:
+  output_dir: "./models"
+  learning_rate: 0.0002
+  epochs: 3
+  batch_size: 16
+  max_length: 512
+  warmup_steps: 100
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.1
+  opset_version: 17
+  optimize: true
+
+# ========== Phase 4 — Retraining Pipeline ==========
+retraining:
+  models_dir: "./models"
+  data_dir: "./data"
+  retrain_trigger:
+    recall_below: 0.90
+    fpr_above: 0.10
+    new_samples_min: 100
+
+# ========== Phase 5 — Enterprise: Server ==========
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  cors_origins: ["*"]
+  jwt_secret_env: "JWT_SECRET"
+  jwt_algorithm: "HS256"
+  token_expiry_seconds: 86400
+
+# ========== Phase 5 — Enterprise: Observability ==========
+observability:
+  metrics_port: 9090
+  metrics_enabled: true

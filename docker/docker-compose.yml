@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  firewall:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=pifirewall-production-secret-change-me
+      - FIREWALL_CONFIG=/app/config/default.yaml
+    volumes:
+      - ../config:/app/config:ro
+      - ../logs:/app/logs
+      - ../data:/app/data
+      - ../models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - firewall-net
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    networks:
+      - firewall-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ../config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ../config/grafana-dashboards:/etc/grafana/dashboards:ro
+    networks:
+      - firewall-net
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  firewall-net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
